@@ -1,0 +1,1075 @@
+diff --git a/package-lock.json b/package-lock.json
+index 9fd05d3..7f46b6a 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -730,27 +730,6 @@
+         }
+       }
+     },
+-    "compressjs": {
+-      "version": "1.0.3",
+-      "resolved": "https://registry.npmjs.org/compressjs/-/compressjs-1.0.3.tgz",
+-      "integrity": "sha1-ldt03VuQOM+AvKMhqw7eJxtJWbY=",
+-      "dev": true,
+-      "requires": {
+-        "amdefine": "~1.0.0",
+-        "commander": "~2.8.1"
+-      },
+-      "dependencies": {
+-        "commander": {
+-          "version": "2.8.1",
+-          "resolved": "https://registry.npmjs.org/commander/-/commander-2.8.1.tgz",
+-          "integrity": "sha1-Br42f+v9oMMwqh4qBy09yXYkJdQ=",
+-          "dev": true,
+-          "requires": {
+-            "graceful-readlink": ">= 1.0.0"
+-          }
+-        }
+-      }
+-    },
+     "concat-map": {
+       "version": "0.0.1",
+       "resolved": "https://registry.npmjs.org/concat-map/-/concat-map-0.0.1.tgz",
+@@ -1571,12 +1550,6 @@
+       "dev": true,
+       "optional": true
+     },
+-    "graceful-readlink": {
+-      "version": "1.0.1",
+-      "resolved": "https://registry.npmjs.org/graceful-readlink/-/graceful-readlink-1.0.1.tgz",
+-      "integrity": "sha1-TK+tdrxi8C+gObL5Tpo906ORpyU=",
+-      "dev": true
+-    },
+     "has": {
+       "version": "1.0.3",
+       "resolved": "https://registry.npmjs.org/has/-/has-1.0.3.tgz",
+diff --git a/package.json b/package.json
+index 0c2e87f..3475e6e 100644
+--- a/package.json
++++ b/package.json
+@@ -35,4 +35,4 @@
+     "st": "^1.2.2",
+     "tinyify": "^2.5.1"
+   }
+-}
++}
+\ No newline at end of file
+diff --git a/src/game-model.js b/src/game-model.js
+index da7c6ee..cb61578 100644
+--- a/src/game-model.js
++++ b/src/game-model.js
+@@ -184,7 +184,7 @@ class GameModel {
+ 
+         this.faceTransStateThing = [];
+         this.faceTransStateThing.length = k;
+-        
++
+         for (let i = 0; i < k; i += 1) {
+             this.faceTransStateThing[i] = [0];
+         }
+@@ -241,7 +241,7 @@ class GameModel {
+         for (let l2 = 0; l2 < k; l2++) {
+             this.faceVertices[l2] = new Int32Array(this.faceNumVertices[l2]);
+ 
+-            for (let i3 = 0; i3 < faceNumVertices[l2]; i3++) {
++            for (let i3 = 0; i3 < this.faceNumVertices[l2]; i3++) {
+                 if (j < 256) {
+                     this.faceVertices[l2][i3] = data[offset++] & 0xff;
+                 } else {
+@@ -253,7 +253,7 @@ class GameModel {
+ 
+         this.numFaces = k;
+         this.transformState = 1;
+-        
++
+         return this;
+     }
+ 
+@@ -383,7 +383,7 @@ class GameModel {
+ 
+     clear() {
+         this.numFaces = 0;
+-        this.numVertices = 0;    
++        this.numVertices = 0;
+     }
+ 
+     reduce(df, dz) {
+@@ -592,7 +592,7 @@ class GameModel {
+         this.lightAmbience = 256 - ambient * 4;
+         this.lightDiffuse = (64 - diffuse) * 16 + 128;
+ 
+-        if (this.unlit) { 
++        if (this.unlit) {
+             return;
+         }
+ 
+@@ -634,7 +634,7 @@ class GameModel {
+             this.light();
+         }
+     }
+-    
++
+     setLight(...args) {
+         switch (args.length) {
+             case 5:
+@@ -671,7 +671,7 @@ class GameModel {
+         this.baseY += y;
+         this.baseZ += z;
+         this.determineTransformKind();
+-        transformState = 1;
++        this.transformState = 1;
+     }
+ 
+     place(x, y, z) {
+@@ -725,8 +725,8 @@ class GameModel {
+             }
+ 
+             if (roll !== 0) {
+-                let sin = sine9[roll];
+-                let cos = sine9[roll + 256];
++                let sin = this.sine9[roll];
++                let cos = this.sine9[roll + 256];
+                 let x = this.vertexTransformedZ[v] * sin + this.vertexTransformedX[v] * cos >> 15;
+ 
+                 this.vertexTransformedZ[v] = this.vertexTransformedZ[v] * cos - this.vertexTransformedX[v] * sin >> 15;
+@@ -882,7 +882,7 @@ class GameModel {
+ 
+         for (let face = 0; face < this.numFaces; face++) {
+             if (this.faceIntensity[face] === this.magic) {
+-                for (let v = 0; v < faceNumVertices[face]; v++) {
++                for (let v = 0; v < this.faceNumVertices[face]; v++) {
+                     let k1 = this.faceVertices[face][v];
+ 
+                     normalX[k1] += this.faceNormalX[face];
+@@ -1080,19 +1080,19 @@ class GameModel {
+     // TODO see if we have to call .slice() anywhere here
+     copy(...args) {
+         if (!args || !args.length) {
+-            let pieces = [ this ]; 
++            let pieces = [this];
+             gameModel = new GameModel(pieces, 1);
+-            gameModel.depth = depth;
+-            gameModel.transparent = transparent;
++            gameModel.depth = this.depth;
++            gameModel.transparent = this.transparent;
+ 
+             return gameModel;
+         }
+ 
+-        const [ autocommit, isolated, unlit, pickable ] = args;
++        const [autocommit, isolated, unlit, pickable] = args;
+ 
+-        let pieces = [ this ];
++        let pieces = [this];
+         let gameModel = new GameModel(pieces, 1, autocommit, isolated, unlit, pickable);
+-        gameModel.depth = depth;
++        gameModel.depth = this.depth;
+ 
+         return gameModel;
+     }
+@@ -1109,11 +1109,11 @@ class GameModel {
+     }
+ 
+     readBase64(buff) {
+-        for (; buff[dataPtr] === 10 || buff[dataPtr] === 13; dataPtr++) ;
++        for (; buff[this.dataPtr] === 10 || buff[this.dataPtr] === 13; this.dataPtr++);
+ 
+-        let hi = GameModel.base64Alphabet[buff[dataPtr++] & 0xff];
+-        let mid = GameModel.base64Alphabet[buff[dataPtr++] & 0xff];
+-        let lo = GameModel.base64Alphabet[buff[dataPtr++] & 0xff];
++        let hi = GameModel.base64Alphabet[buff[this.dataPtr++] & 0xff];
++        let mid = GameModel.base64Alphabet[buff[this.dataPtr++] & 0xff];
++        let lo = GameModel.base64Alphabet[buff[this.dataPtr++] & 0xff];
+         let val = ((hi * 4096 + mid * 64 + lo) - 0x20000) | 0;
+ 
+         if (val === 0x1e240) {
+diff --git a/src/mudclient.js b/src/mudclient.js
+index b6efbaf..959d4b2 100644
+--- a/src/mudclient.js
++++ b/src/mudclient.js
+@@ -93,7 +93,7 @@ class mudclient extends GameConnection {
+         this.regionY = 0;
+         this.welcomScreenAlreadyShown = false;
+         this.mouseButtonClick = 0;
+-        this.questName = [ 
++        this.questName = [
+             'Black knight\'s fortress', 'Cook\'s assistant', 'Demon slayer', 'Doric\'s quest', 'The restless ghost', 'Goblin diplomacy', 'Ernest the chicken', 'Imp catcher', 'Pirate\'s treasure', 'Prince Ali rescue',
+             'Romeo & Juliet', 'Sheep shearer', 'Shield of Arrav', 'The knight\'s sword', 'Vampire slayer', 'Witch\'s potion', 'Dragon slayer', 'Witch\'s house (members)', 'Lost city (members)', 'Hero\'s quest (members)',
+             'Druidic ritual (members)', 'Merlin\'s crystal (members)', 'Scorpion catcher (members)', 'Family crest (members)', 'Tribal totem (members)', 'Fishing contest (members)', 'Monk\'s friend (members)', 'Temple of Ikov (members)', 'Clock tower (members)', 'The Holy Grail (members)',
+@@ -139,17 +139,17 @@ class mudclient extends GameConnection {
+         this.mouseClickXStep = 0;
+         this.newBankItemCount = 0;
+         this.npcAnimationArray = [
+-            new Int32Array([11, 2, 9, 7, 1, 6, 10, 0, 5, 8, 3, 4]), 
+-            new Int32Array([11, 2, 9, 7, 1, 6, 10, 0, 5, 8, 3, 4]), 
+-            new Int32Array([11, 3, 2, 9, 7, 1, 6, 10, 0, 5, 8, 4]), 
+-            new Int32Array([3, 4, 2, 9, 7, 1, 6, 10, 8, 11, 0, 5]), 
+-            new Int32Array([3, 4, 2, 9, 7, 1, 6, 10, 8, 11, 0, 5]), 
+-            new Int32Array([4, 3, 2, 9, 7, 1, 6, 10, 8, 11, 0, 5]), 
+-            new Int32Array([11, 4, 2, 9, 7, 1, 6, 10, 0, 5, 8, 3]), 
+-            new Int32Array([11, 2, 9, 7, 1, 6, 10, 0, 5, 8, 4, 3]) ];
++            new Int32Array([11, 2, 9, 7, 1, 6, 10, 0, 5, 8, 3, 4]),
++            new Int32Array([11, 2, 9, 7, 1, 6, 10, 0, 5, 8, 3, 4]),
++            new Int32Array([11, 3, 2, 9, 7, 1, 6, 10, 0, 5, 8, 4]),
++            new Int32Array([3, 4, 2, 9, 7, 1, 6, 10, 8, 11, 0, 5]),
++            new Int32Array([3, 4, 2, 9, 7, 1, 6, 10, 8, 11, 0, 5]),
++            new Int32Array([4, 3, 2, 9, 7, 1, 6, 10, 8, 11, 0, 5]),
++            new Int32Array([11, 4, 2, 9, 7, 1, 6, 10, 0, 5, 8, 3]),
++            new Int32Array([11, 2, 9, 7, 1, 6, 10, 0, 5, 8, 4, 3])];
+         this.controlWelcomeNewuser = 0;
+         this.controlWelcomeExistinguser = 0;
+-        this.npcWalkModel = [ 0, 1, 2, 1 ];
++        this.npcWalkModel = [0, 1, 2, 1];
+         this.referid = 0;
+         this.anInt827 = 0;
+         this.controlLoginNewOk = 0;
+@@ -191,9 +191,9 @@ class mudclient extends GameConnection {
+         ]);
+         this.bankActivePage = 0;
+         this.welcomeLastLoggedInDays = 0;
+-        this.equipmentStatNames = [ 'Armour', 'WeaponAim', 'WeaponPower', 'Magic', 'Prayer' ];
++        this.equipmentStatNames = ['Armour', 'WeaponAim', 'WeaponPower', 'Magic', 'Prayer'];
+         this.inventoryItemsCount = 0;
+-        this.skillNameShort = [ 
++        this.skillNameShort = [
+             'Attack', 'Defense', 'Strength', 'Hits', 'Ranged', 'Prayer', 'Magic', 'Cooking', 'Woodcut', 'Fletching',
+             'Fishing', 'Firemaking', 'Crafting', 'Smithing', 'Mining', 'Herblaw', 'Agility', 'Thieving'
+         ];
+@@ -201,7 +201,7 @@ class mudclient extends GameConnection {
+         this.minimapRandom_1 = 0;
+         this.minimapRandom_2 = 0;
+         this.objectCount = 0;
+-        this.duelOfferItemCount = 0; 
++        this.duelOfferItemCount = 0;
+         this.objectCount = 0;
+         this.duelOfferItemCount = 0;
+         this.cameraAutoRotatePlayerX = 0;
+@@ -301,7 +301,7 @@ class mudclient extends GameConnection {
+         this.magicLoc = 128;
+         this.errorLoadingMemory = false;
+         this.gameWidth = 512;
+-        this.gameHeight = 334; 
++        this.gameHeight = 334;
+         this.const_9 = 9;
+         this.tradeConfirmItems = new Int32Array(14);
+         this.tradeConfirmItemCount = new Int32Array(14);
+@@ -1010,7 +1010,7 @@ class mudclient extends GameConnection {
+                         }
+ 
+                         // quest items? or just tagged as 'special'
+-                        if (GameData.itemSpecial[itemType] === 1) { 
++                        if (GameData.itemSpecial[itemType] === 1) {
+                             this.showMessage('This object cannot be traded with other players', 3);
+                             sendUpdate = true;
+                         }
+@@ -1837,7 +1837,7 @@ class mudclient extends GameConnection {
+             this.systemUpdate--;
+         }
+ 
+-        await this.checkConnection(); 
++        await this.checkConnection();
+ 
+         if (this.logoutTimeout > 0) {
+             this.logoutTimeout--;
+@@ -1873,7 +1873,7 @@ class mudclient extends GameConnection {
+ 
+                 if (l2 < k) {
+                     j4 = k - l2;
+-                } else  {
++                } else {
+                     j4 = (10 + k) - l2;
+                 }
+ 
+@@ -2044,7 +2044,8 @@ class mudclient extends GameConnection {
+             } else {
+                 character_1.animationCurrent = character_1.animationNext;
+ 
+-                if (character_1.npcId === 43) {A
++                if (character_1.npcId === 43) {
++                    A
+                     character_1.stepCount++;
+                 }
+             }
+@@ -2140,7 +2141,7 @@ class mudclient extends GameConnection {
+             if (this.inputTextFinal.length > 0) {
+                 if (/^::lostcon$/i.test(this.inputTextFinal)) {
+                     this.clientStream.closeStream();
+-                } else if (/^::closecon$/.test(this.inputTextFinal)) { 
++                } else if (/^::closecon$/.test(this.inputTextFinal)) {
+                     this.closeConnection();
+                 } else {
+                     this.clientStream.newPacket(C_OPCODES.SLEEP_WORD);
+@@ -2411,11 +2412,11 @@ class mudclient extends GameConnection {
+         this.surface.drawBox(0, 194, 512, 20, 0);
+ 
+         for (let k = 6; k >= 1; k--) {
+-            this.surface.drawLineAlpha(0, k, 0, 194 - k, this.gameWidth, 8); 
++            this.surface.drawLineAlpha(0, k, 0, 194 - k, this.gameWidth, 8);
+         }
+ 
+         // runescape logo
+-        this.surface._drawSprite_from3(((this.gameWidth / 2) | 0) - ((this.surface.spriteWidth[this.spriteMedia + 10] / 2) | 0), 15, this.spriteMedia + 10); 
++        this.surface._drawSprite_from3(((this.gameWidth / 2) | 0) - ((this.surface.spriteWidth[this.spriteMedia + 10] / 2) | 0), 15, this.spriteMedia + 10);
+         this.surface._drawSprite_from5(this.spriteLogo, 0, 0, this.gameWidth, 200);
+         this.surface.drawWorld(this.spriteLogo);
+ 
+@@ -2447,7 +2448,7 @@ class mudclient extends GameConnection {
+         }
+ 
+         this.surface._drawSprite_from3(((this.gameWidth / 2) | 0) - ((this.surface.spriteWidth[this.spriteMedia + 10] / 2) | 0), 15, this.spriteMedia + 10);
+-        this.surface._drawSprite_from5(this.spriteLogo + 1, 0, 0, this.gameWidth, 200); 
++        this.surface._drawSprite_from5(this.spriteLogo + 1, 0, 0, this.gameWidth, 200);
+         this.surface.drawWorld(this.spriteLogo + 1);
+ 
+         for (let j1 = 0; j1 < 64; j1++) {
+@@ -2481,7 +2482,7 @@ class mudclient extends GameConnection {
+         this.surface.drawBox(0, 194, this.gameWidth, 20, 0);
+ 
+         for (let l1 = 6; l1 >= 1; l1--) {
+-            this.surface.drawLineAlpha(0, l1, 0, 194, this.gameWidth, 8); 
++            this.surface.drawLineAlpha(0, l1, 0, 194, this.gameWidth, 8);
+         }
+ 
+         this.surface._drawSprite_from3(((this.gameWidth / 2) | 0) - ((this.surface.spriteWidth[this.spriteMedia + 10] / 2) | 0), 15, this.spriteMedia + 10);
+@@ -2758,7 +2759,7 @@ class mudclient extends GameConnection {
+         this.surface.drawBox(uiX, 36, uiWidth, uiHeight, 0);
+         this.surface.setBounds(uiX, 36, uiX + uiWidth, 36 + uiHeight);
+ 
+-        let k = 192 + minimapRandom_2;
++        let k = 192 + this.minimapRandom_2;
+         let i1 = this.cameraRotation + this.minimapRandom_1 & 0xff;
+         let k1 = (((this.localPlayer.currentX - 6040) * 3 * k) / 2048) | 0;
+         let i3 = (((this.localPlayer.currentY - 6040) * 3 * k) / 2048) | 0;
+@@ -2768,7 +2769,7 @@ class mudclient extends GameConnection {
+ 
+         i3 = i3 * i5 - k1 * k4 >> 18;
+         k1 = k5;
+-        
++
+         // landscape
+         this.surface.drawMinimapSprite((uiX + ((uiWidth / 2) | 0)) - k1, 36 + ((uiHeight / 2) | 0) + i3, this.spriteMedia - 1, i1 + 64 & 255, k);
+ 
+@@ -4110,7 +4111,7 @@ class mudclient extends GameConnection {
+         let character = this.players[id];
+ 
+         // this means the character is invisible! MOD!!!
+-        if (character.colourBottom === 255)  {
++        if (character.colourBottom === 255) {
+             return;
+         }
+ 
+@@ -4444,7 +4445,7 @@ class mudclient extends GameConnection {
+         }
+ 
+         this.scene = new Scene(this.surface, 15000, 15000, 1000);
+-        this.scene.setBounds((this.gameWidth / 2) | 0, (this.gameHeight / 2) | 0, (this.gameWidth / 2) | 0, (this.gameHeight / 2) | 0, this.gameWidth, this.const_9);
++        this.scene.setBounds(parseInt(this.gameWidth / 2), parseInt(this.gameHeight / 2), parseInt(this.gameWidth / 2), parseInt(this.gameHeight / 2), this.gameWidth, this.const_9);
+         this.scene.clipFar3d = 2400;
+         this.scene.clipFar2d = 2400;
+         this.scene.fogZFalloff = 1;
+@@ -4491,7 +4492,7 @@ class mudclient extends GameConnection {
+         this.surface._drawSprite_from3(uiX - 49, 3, this.spriteMedia + 4);
+         let uiWidth = 196;
+         let uiHeight = 182;
+-        let l = 0 ;
++        let l = 0;
+         let k = l = Surface.rgbToLong(160, 160, 160);
+ 
+         if (this.tabMagicPrayer === 0) {
+@@ -5525,7 +5526,7 @@ class mudclient extends GameConnection {
+     drawDialogDuelConfirm() {
+         let dialogX = 22;
+         let dialogY = 36;
+- 
++
+         this.surface.drawBox(dialogX, dialogY, 468, 16, 192);
+         this.surface.drawBoxAlpha(dialogX, dialogY + 16, 468, 246, 0x989898, 160);
+         this.surface.drawStringCenter('Please confirm your duel with @yel@' + Utility.hashToUsername(this.duelOpponentNameHash), dialogX + 234, dialogY + 12, 1, 0xffffff);
+@@ -5773,7 +5774,7 @@ class mudclient extends GameConnection {
+ 
+     showMessage(message, type) {
+         if (type === 2 || type === 4 || type === 6) {
+-            for (; message.length > 5 && message[0] === '@' && message[4] === '@'; message = message.substring(5)) ;
++            for (; message.length > 5 && message[0] === '@' && message[4] === '@'; message = message.substring(5));
+ 
+             let j = message.indexOf(':');
+ 
+@@ -6278,7 +6279,7 @@ class mudclient extends GameConnection {
+     }
+ 
+     // looks like it just updates objects like torches etc to flip between the different models and appear "animated"
+-    updateObjectAnimation(i, s) { 
++    updateObjectAnimation(i, s) {
+         let j = this.objectX[i];
+         let k = this.objectY[i];
+         let l = j - ((this.localPlayer.currentX / 128) | 0);
+@@ -6311,7 +6312,7 @@ class mudclient extends GameConnection {
+             this.menuIndices[i] = i;
+         }
+ 
+-        for (let flag = false; !flag; ) {
++        for (let flag = false; !flag;) {
+             flag = true;
+ 
+             for (let j = 0; j < this.menuItemsCount - 1; j++) {
+@@ -6379,7 +6380,7 @@ class mudclient extends GameConnection {
+                     let l1 = this.surface.textWidth(this.menuItemText1[k1] + ' ' + this.menuItemText2[k1], 1) + 5;
+ 
+                     if (l1 > this.menuWidth) {
+-                        this.menuWidth = l1; 
++                        this.menuWidth = l1;
+                     }
+                 }
+ 
+@@ -6945,7 +6946,7 @@ class mudclient extends GameConnection {
+             }
+ 
+             if (opcode === S_OPCODES.REGION_GROUND_ITEMS) {
+-                for (let l = 1; l < psize; )
++                for (let l = 1; l < psize;)
+                     if (Utility.getUnsignedByte(pdata[l]) === 255) {
+                         let l7 = 0;
+                         let j14 = this.localRegionX + pdata[l + 1] >> 3;
+@@ -7021,7 +7022,7 @@ class mudclient extends GameConnection {
+             }
+ 
+             if (opcode === S_OPCODES.REGION_OBJECTS) {
+-                for (let i1 = 1; i1 < psize; ) {
++                for (let i1 = 1; i1 < psize;) {
+                     if (Utility.getUnsignedByte(pdata[i1]) === 255) {
+                         let j8 = 0;
+                         let l14 = this.localRegionX + pdata[i1 + 1] >> 3;
+@@ -7166,7 +7167,7 @@ class mudclient extends GameConnection {
+                     offset++;
+ 
+                     // speech bubble with an item in it
+-                    if (updateType === 0) { 
++                    if (updateType === 0) {
+                         let id = Utility.getUnsignedShort(pdata, offset);
+                         offset += 2;
+ 
+@@ -7312,7 +7313,7 @@ class mudclient extends GameConnection {
+             }
+ 
+             if (opcode === S_OPCODES.REGION_WALL_OBJECTS) {
+-                for (let offset = 1; offset < psize; )
++                for (let offset = 1; offset < psize;)
+                     if (Utility.getUnsignedByte(pdata[offset]) === 255) {
+                         let count = 0;
+                         let lX = this.localRegionX + pdata[offset + 1] >> 3;
+@@ -8210,7 +8211,7 @@ class mudclient extends GameConnection {
+             }
+ 
+             if (opcode === S_OPCODES.SERVER_MESSAGE_ONTOP) {
+-                this.serverMessage = pdata.slice( 1, psize - 1).toString();
++                this.serverMessage = pdata.slice(1, psize - 1).toString();
+                 this.showDialogServermessage = true;
+                 this.serverMessageBoxTop = true;
+ 
+@@ -8455,7 +8456,7 @@ class mudclient extends GameConnection {
+             let pid = plyrs[menuIdx];
+             let gameModel = objs[menuIdx];
+ 
+-            if (gameModel.faceTag[pid] <= 65535 || gameModel.faceTag[pid] >= 200000 && gameModel.faceTag[pid] <= 300000)  {
++            if (gameModel.faceTag[pid] <= 65535 || gameModel.faceTag[pid] >= 200000 && gameModel.faceTag[pid] <= 300000) {
+                 if (gameModel === this.scene.view) {
+                     let idx = gameModel.faceTag[pid] % 10000;
+                     let type = (gameModel.faceTag[pid] / 10000) | 0;
+diff --git a/src/scene.js b/src/scene.js
+index 6a26d56..08df29f 100644
+--- a/src/scene.js
++++ b/src/scene.js
+@@ -1220,8 +1220,8 @@ class Scene {
+         let vs = new Int32Array([l1, i2]);
+ 
+         this.view.createFace(2, vs, 0, 0);
+-        this.view.faceTag[spriteCount] = tag;
+-        this.view.isLocalPlayer[spriteCount++] = 0;
++        this.view.faceTag[this.spriteCount] = tag;
++        this.view.isLocalPlayer[this.spriteCount++] = 0;
+ 
+         return this.spriteCount - 1;
+     }
+@@ -1262,6 +1262,9 @@ class Scene {
+         this.viewDistance = viewDistance;
+         this.scanlines = [];
+ 
++        console.log('scanline: ', clipY + baseY);
++
++
+         for (let k1 = 0; k1 < clipY + baseY; k1++) {
+             this.scanlines.push(new Scanline());
+         }
+@@ -1335,7 +1338,7 @@ class Scene {
+                         k1++;
+                     }
+ 
+-                    i1 = newStart;
++                    i1 = this.newStart;
+                     other.index2 = polygon.index;
+                 }
+             }
+@@ -1399,7 +1402,7 @@ class Scene {
+                 return false;
+             }
+ 
+-            end = newEnd;
++            end = this.newEnd;
+         } while (true);
+     }
+ 
+@@ -1768,8 +1771,8 @@ class Scene {
+             let j13 = 0;
+             let l13 = 0;
+             let j14 = 0;
+-            let l14 = World.colourTransparent;
+-            let j15 = 0xff439eb2;
++            let l14 = 12345678;
++            let j15 = -12345678;
+ 
+             if (k3 !== k1) {
+                 j13 = ((j7 - k4 << 8) / (k3 - k1)) | 0;
+@@ -1802,8 +1805,8 @@ class Scene {
+             let j16 = 0;
+             let l16 = 0;
+             let j17 = 0;
+-            let l17 = World.colourTransparent;
+-            let j18 = 0xff439eb2;
++            let l17 = 12345678;
++            let j18 = -12345678;
+ 
+             if (k2 !== k1) {
+                 j16 = ((l5 - k4 << 8) / (k2 - k1)) | 0;
+@@ -1836,8 +1839,8 @@ class Scene {
+             let j19 = 0;
+             let l19 = 0;
+             let j20 = 0;
+-            let l20 = World.colourTransparent;
+-            let j21 = 0xff439eb2;
++            let l20 = 12345678;
++            let j21 = -12345678;
+ 
+             if (k3 !== k2) {
+                 j19 = ((j7 - l5 << 8) / (k3 - k2)) | 0;
+@@ -1888,15 +1891,15 @@ class Scene {
+ 
+             let l21 = 0;
+ 
+-            for (k = this.minY; k < this.maxY; k++) {
++            for (k = this.minY; k < j12; k++) {
+                 if (k >= l14 && k < j15) {
+                     i = j = l12;
+                     l = l21 = l13;
+                     l12 += j13;
+                     l13 += j14;
+                 } else {
+-                    i = 0xa0000;
+-                    j = 0xfff60000;
++                    i = 655360;
++                    j = -655360;
+                 }
+ 
+                 if (k >= l17 && k < j18) {
+@@ -1958,7 +1961,7 @@ class Scene {
+             let k15 = 0;
+             let i16 = 0;
+             let k16 = World.colourTransparent;
+-            let i17 = 0xff439eb2;
++            let i17 = -12345678;
+ 
+             if (l4 !== l1) {
+                 i15 = ((k10 - i6 << 8) / (l4 - l1)) | 0;
+@@ -1992,7 +1995,7 @@ class Scene {
+             let k18 = 0;
+             let i19 = 0;
+             let k19 = World.colourTransparent;
+-            let i20 = 0xff439eb2;
++            let i20 = -12345678;
+ 
+             if (l2 !== l1) {
+                 i18 = ((k7 - i6 << 8) / (l2 - l1)) | 0;
+@@ -2026,7 +2029,7 @@ class Scene {
+             let k21 = 0;
+             let i22 = 0;
+             let j22 = World.colourTransparent;
+-            let k22 = 0xff439eb2;
++            let k22 = -12345678;
+ 
+             if (l3 !== l2) {
+                 i21 = ((i9 - k7 << 8) / (l3 - l2)) | 0;
+@@ -2060,7 +2063,7 @@ class Scene {
+             let j23 = 0;
+             let k23 = 0;
+             let l23 = World.colourTransparent;
+-            let i24 = 0xff439eb2;
++            let i24 = -12345678;
+ 
+             if (l4 !== l3) {
+                 i23 = ((k10 - i9 << 8) / (l4 - l3)) | 0;
+@@ -2126,8 +2129,8 @@ class Scene {
+                     k14 += i15;
+                     k15 += i16;
+                 } else {
+-                    i = 0xa0000;
+-                    j = 0xfff60000;
++                    i = 655360;
++                    j = -655360;
+                 }
+ 
+                 if (k >= k19 && k < i20) {
+@@ -2212,8 +2215,8 @@ class Scene {
+ 
+             for (k = this.minY; k < this.maxY; k++) {
+                 let scanline = this.scanlines[k];
+-                scanline.startX = 0xa0000;
+-                scanline.endX = 0xfff60000;
++                scanline.startX = 655360;
++                scanline.endX = -655360;
+             }
+ 
+             let j2 = i1 - 1;
+@@ -2787,7 +2790,7 @@ class Scene {
+             return;
+         }
+ 
+-        for (i = this.minY; i < this.maxY; i += byte0) {
++        for (let i = this.minY; i < this.maxY; i += byte0) {
+             let scanline_2 = this.scanlines[i];
+             j = scanline_2.startX >> 8;
+             let k5 = scanline_2.endX >> 8;
+@@ -2887,7 +2890,7 @@ class Scene {
+             }
+ 
+             gameModel.normalScale[face] = faceCameraNormalScale;
+-            gameModel.normalMagnitude[face] = (this.normalMagnitude * Math.sqrt(t1 * t1 + t2 * t2 + t3 * t3) ) | 0;
++            gameModel.normalMagnitude[face] = (this.normalMagnitude * Math.sqrt(t1 * t1 + t2 * t2 + t3 * t3)) | 0;
+         } else {
+             t1 >>= faceCameraNormalScale;
+             t2 >>= faceCameraNormalScale;
+@@ -3120,7 +3123,7 @@ class Scene {
+ 
+         if (l === 2) {
+             ai4 = new Int32Array(4);
+-            ai5 =  new Int32Array(4);
++            ai5 = new Int32Array(4);
+             let k5 = ai1[0];
+             let l1 = ai1[1];
+             ai4[0] = gameModel_1.vertexViewX[k5] - 20;
+@@ -3234,7 +3237,7 @@ class Scene {
+         this.textureColours128.fill(null);
+     }
+ 
+-    defineTexture(id, usedColours, colours,  wide128) {
++    defineTexture(id, usedColours, colours, wide128) {
+         this.textureColoursUsed[id] = usedColours;
+         this.textureColourList[id] = colours;
+         this.textureDimension[id] = wide128; // is 1 if the this.texture is 128+ pixels wide, 0 if <128
+@@ -3373,7 +3376,7 @@ class Scene {
+     }
+ 
+     method302(i) {
+-        if (i === World.colourTransparent) {
++        if (i === 12345678) {
+             return 0;
+         }
+ 
+@@ -3521,8 +3524,8 @@ class Scene {
+         let flag = false;
+ 
+         if (ai1[k] < ai3[i1]) {
+-            for (l = k; ai1[l] < ai3[i1]; l = (l + 1) % i) ;
+-            for (; ai1[k] < ai3[i1]; k = ((k - 1) + i) % i) ;
++            for (l = k; ai1[l] < ai3[i1]; l = (l + 1) % i);
++            for (; ai1[k] < ai3[i1]; k = ((k - 1) + i) % i);
+             let k1 = this.method306(ai[(k + 1) % i], ai1[(k + 1) % i], ai[k], ai1[k], ai3[i1]);
+             let k6 = this.method306(ai[((l - 1) + i) % i], ai1[((l - 1) + i) % i], ai[l], ai1[l], ai3[i1]);
+             let l10 = ai2[i1];
+@@ -3539,8 +3542,8 @@ class Scene {
+                 byte0 = 1;
+             }
+         } else {
+-            for (j1 = i1; ai3[j1] < ai1[k]; j1 = (j1 + 1) % j) ;
+-            for (; ai3[i1] < ai1[k]; i1 = ((i1 - 1) + j) % j) ;
++            for (j1 = i1; ai3[j1] < ai1[k]; j1 = (j1 + 1) % j);
++            for (; ai3[i1] < ai1[k]; i1 = ((i1 - 1) + j) % j);
+             let l1 = ai[k];
+             let i11 = this.method306(ai2[(i1 + 1) % j], ai3[(i1 + 1) % j], ai2[i1], ai3[i1], ai1[k]);
+             let l15 = this.method306(ai2[((j1 - 1) + j) % j], ai3[((j1 - 1) + j) % j], ai2[j1], ai3[j1], ai1[k]);
+diff --git a/src/surface.js b/src/surface.js
+index a7e7516..70d0db4 100644
+--- a/src/surface.js
++++ b/src/surface.js
+@@ -42,7 +42,7 @@ class Surface {
+         this.surfacePixels = [];
+         this.surfacePixels.length = limit;
+         this.surfacePixels.fill(null);
+-        this.spriteColoursUsed = []
++        this.spriteColoursUsed = [];
+         this.spriteColoursUsed.length = limit;
+         this.spriteColoursUsed.fill(null);
+         this.spriteColourList = [];
+@@ -100,7 +100,7 @@ class Surface {
+         if (y2 > this.height2) {
+             y2 = this.height2;
+         }
+-        
++
+         this.boundsTopX = x1;
+         this.boundsTopY = y1;
+         this.boundsBottomX = x2;
+@@ -579,7 +579,7 @@ class Surface {
+             this.surfacePixels[id] = null;
+             this.spriteTranslate[id] = false;
+ 
+-            if (this.spriteTranslateX[id] !== 0 || this.spriteTranslateY[id] !== 0)  {
++            if (this.spriteTranslateX[id] !== 0 || this.spriteTranslateY[id] !== 0) {
+                 this.spriteTranslate[id] = true;
+             }
+ 
+@@ -620,7 +620,7 @@ class Surface {
+         let k = 1;
+         let l = 0;
+ 
+-        for (l = 0; l < 255; ) {
++        for (l = 0; l < 255;) {
+             let i1 = spriteData[k++] & 0xff;
+ 
+             for (let k1 = 0; k1 < i1; k1++) {
+@@ -631,7 +631,7 @@ class Surface {
+         }
+ 
+         for (let y = 1; y < 40; y++) {
+-            for (let x = 0; x < 255; ) {
++            for (let x = 0; x < 255;) {
+                 let i2 = spriteData[k++] & 0xff;
+ 
+                 for (let j2 = 0; j2 < i2; j2++) {
+@@ -695,7 +695,7 @@ class Surface {
+             let l2 = ai1[k2];
+ 
+             if (l2 === -1) {
+-                let i3 = 0x3b9ac9ff;
++                let i3 = 999999999;
+                 let j3 = j2 >> 16 & 0xff;
+                 let k3 = j2 >> 8 & 0xff;
+                 let l3 = j2 & 0xff;
+@@ -985,7 +985,7 @@ class Surface {
+         }
+ 
+         if (width <= 0 || height <= 0) {
+-            return; 
++            return;
+         }
+ 
+         let yInc = 1;
+@@ -1003,10 +1003,8 @@ class Surface {
+ 
+         if (this.surfacePixels[spriteId] === null) {
+             this._drawSpriteAlpha_from11A(this.pixels, this.spriteColoursUsed[spriteId], this.spriteColourList[spriteId], j1, size, width, height, extraXSpace, j2, yInc, alpha);
+-            return;
+         } else {
+             this._drawSpriteAlpha_from11(this.pixels, this.surfacePixels[spriteId], 0, j1, size, width, height, extraXSpace, j2, yInc, alpha);
+-            return;
+         }
+     }
+ 
+@@ -1210,7 +1208,7 @@ class Surface {
+             for (let l2 = width; l2 < 0; l2++) {
+                 i = src[srcPos++];
+ 
+-                if (i !==  0) {
++                if (i !== 0) {
+                     dest[destPos++] = i;
+                 } else {
+                     destPos++;
+@@ -1769,7 +1767,7 @@ class Surface {
+     }
+ 
+     _spriteClipping_from9(x, y, w, h, sprite, colour1, colour2, l1, flag) {
+-       try {
++        try {
+             if (colour1 === 0) {
+                 colour1 = 0xffffff;
+             }
+@@ -2027,7 +2025,7 @@ class Surface {
+                     let j6 = (k5 + l5) - boundsBottomX;
+                     l5 -= j6;
+                 }
+-                
++
+                 i3 = 1 - i3;
+ 
+                 if (i3 !== 0) {
+@@ -2256,7 +2254,7 @@ class Surface {
+         }
+     }
+ 
+-     drawCharacter(width, x, y, colour, font) {
++    drawCharacter(width, x, y, colour, font) {
+         let i1 = x + font[width + 5];
+         let j1 = y - font[width + 6];
+         let k1 = font[width + 3];
+@@ -2453,7 +2451,7 @@ for (let i = 0; i < 256; i++) {
+     if (j === -1) {
+         j = 74;
+     }
+-        
++
+     Surface.characterWidth[i] = j * 9;
+ }
+ 
+diff --git a/src/world.js b/src/world.js
+index 1d0ecae..e989d09 100644
+--- a/src/world.js
++++ b/src/world.js
+@@ -4,23 +4,21 @@ const GameModel = require('./game-model');
+ const Utility = require('./utility');
+ const ndarray = require('ndarray');
+ 
+-console.log(Scene, 'scene from world :(');
+-
+ class World {
+     constructor(scene, surface) {
+         this.regionWidth = 96;
+         this.regionHeight = 96;
+-        this.anInt585 = 128; 
++        this.anInt585 = 128;
+         this.parentModel = null;
+ 
+         // Int8Arrays 
+-        this.landscapePack = null; 
+-        this.mapPack = null; 
++        this.landscapePack = null;
++        this.mapPack = null;
+         this.memberLandscapePack = null;
+         this.memberMapPack = null;
+ 
+         this.worldInitialised = true;
+-        this.objectAdjacency = ndarray(new Int32Array(this.regionWidth * this.regionHeight), [ this.regionWidth, this.regionHeight ]);
++        this.objectAdjacency = ndarray(new Int32Array(this.regionWidth * this.regionHeight), [this.regionWidth, this.regionHeight]);
+         this.tileDirection = ndarray(new Int8Array(4 * 2304), [4, 2304]);
+ 
+         this.wallModels = [];
+@@ -43,12 +41,12 @@ class World {
+         this.terrainColour = ndarray(new Int8Array(4 * 2304), [4, 2304]);
+         this.localY = new Int32Array(18432);
+         this.tileDecoration = ndarray(new Int8Array(4 * 2304), [4, 2304]);
+-        this.routeVia = ndarray(new Int32Array(this.regionWidth * this.regionHeight), [ this.regionWidth, this.regionHeight ]);
++        this.routeVia = ndarray(new Int32Array(this.regionWidth * this.regionHeight), [this.regionWidth, this.regionHeight]);
+         this.wallsDiagonal = ndarray(new Int32Array(4 * 2304), [4, 2304]);
+         this.wallsEastWest = ndarray(new Int8Array(4 * 2304), [4, 2304])
+         this.aBoolean592 = false;
+         this.playerAlive = false;
+-        this.terrainHeightLocal = ndarray(new Int32Array(this.regionWidth * this.regionHeight), [ this.regionWidth, this.regionHeight ]);
++        this.terrainHeightLocal = ndarray(new Int32Array(this.regionWidth * this.regionHeight), [this.regionWidth, this.regionHeight]);
+ 
+         this.terrainModels = [];
+         this.terrainModels.length = 64;
+@@ -299,13 +297,13 @@ class World {
+     }
+ 
+     _loadSection_from4I(x, y, plane, chunk) {
+-        let mapName = 'm' + plane + x / 10 + x % 10 + y / 10 + y % 10;
++        let mapName = 'm' + plane + parseInt(x / 10) + parseInt(x % 10) + parseInt(y / 10) + parseInt(y % 10);
+ 
+         try {
+-            if (landscapePack !== null) {
++            if (this.landscapePack !== null) {
+                 let mapData = Utility.loadData(mapName + '.hei', 0, this.landscapePack);
+ 
+-                if (mapData === null && memberLandscapePack !== null) {
++                if (mapData === null && this.memberLandscapePack !== null) {
+                     mapData = Utility.loadData(mapName + '.hei', 0, this.memberLandscapePack);
+                 }
+ 
+@@ -313,7 +311,7 @@ class World {
+                     let off = 0;
+                     let lastVal = 0;
+ 
+-                    for (let tile = 0; tile < 2304; ) {
++                    for (let tile = 0; tile < 2304;) {
+                         let val = mapData[off++] & 0xff;
+ 
+                         if (val < 128) {
+@@ -333,13 +331,13 @@ class World {
+                     for (let tileY = 0; tileY < 48; tileY++) {
+                         for (let tileX = 0; tileX < 48; tileX++) {
+                             lastVal = this.terrainHeight.get(chunk, tileX * 48 + tileY) + lastVal & 0x7f;
+-                            this.terrainHeight.set(chunk, tileX * 48 + tileY,(lastVal * 2) & 0xff);
++                            this.terrainHeight.set(chunk, tileX * 48 + tileY, (lastVal * 2) & 0xff);
+                         }
+                     }
+ 
+                     lastVal = 0;
+ 
+-                    for (let tile = 0; tile < 2304; ) {
++                    for (let tile = 0; tile < 2304;) {
+                         let val = mapData[off++] & 0xff;
+ 
+                         if (val < 128) {
+@@ -401,7 +399,7 @@ class World {
+                     }
+                 }
+ 
+-                for (let tile = 0; tile < 2304; ) {
++                for (let tile = 0; tile < 2304;) {
+                     let val = mapData[off++] & 0xff;
+ 
+                     if (val < 128) {
+@@ -415,7 +413,7 @@ class World {
+ 
+                 let lastVal = 0;
+ 
+-                for (let tile = 0; tile < 2304; ) {
++                for (let tile = 0; tile < 2304;) {
+                     let val = mapData[off++] & 0xff;
+ 
+                     if (val < 128) {
+@@ -428,7 +426,7 @@ class World {
+                     }
+                 }
+ 
+-                for (let tile = 0; tile < 2304; ) {
++                for (let tile = 0; tile < 2304;) {
+                     let val = mapData[off++] & 0xff;
+ 
+                     if (val < 128) {
+@@ -440,12 +438,12 @@ class World {
+                     }
+                 }
+ 
+-                mapData = Utility.loadData(mapName + '.loc', 0, mapPack);
++                mapData = Utility.loadData(mapName + '.loc', 0, this.mapPack);
+ 
+                 if (mapData !== null && mapData.length > 0) {
+                     off = 0;
+ 
+-                    for (let tile = 0; tile < 2304; ) {
++                    for (let tile = 0; tile < 2304;) {
+                         let val = mapData[off++] & 0xff;
+ 
+                         if (val < 128) {
+@@ -458,11 +456,11 @@ class World {
+                     return;
+                 }
+             } else {
+-                console.log('stub. removed reading from ../gamedata/');
++                console.log('error loading landscape');
+             }
+-
+             return;
+         } catch (e) {
++            console.log(e);
+         }
+ 
+         for (let tile = 0; tile < 2304; tile++) {
+@@ -479,7 +477,7 @@ class World {
+             }
+ 
+             if (plane === 3) {
+-                this.tileDecoration.set(chunk, tile, 8); 
++                this.tileDecoration.set(chunk, tile, 8);
+             }
+ 
+             this.tileDirection.set(chunk, tile, 0);
+@@ -582,7 +580,7 @@ class World {
+                     if (x === 47 && this.getTileDecoration(x + 1, y, 0) !== 250 && this.getTileDecoration(x + 1, y, 0) !== 2) {
+                         this.setTileDecoration(x, y, 9);
+                     } else if (y === 47 && this.getTileDecoration(x, y + 1, 0) !== 250 && this.getTileDecoration(x, y + 1, 0) !== 2) {
+-                        this.setTileDecoration(x, y, 9); 
++                        this.setTileDecoration(x, y, 9);
+                     } else {
+                         this.setTileDecoration(x, y, 2);
+                     }
+@@ -798,7 +796,7 @@ class World {
+                 this.routeVia.set(x - 1, y + 1, 6);
+             }
+ 
+-            if (x < 95 && y < 95 && (this.objectAdjacency.get(x, y + 1) & 0x71) === 0 && (this.objectAdjacency.get(x + 1, y) & 0x72) === 0 && (this.objectAdjacency.get(x + 1,y + 1) & 0x73) === 0 && this.routeVia.get(x + 1, y + 1) === 0) {
++            if (x < 95 && y < 95 && (this.objectAdjacency.get(x, y + 1) & 0x71) === 0 && (this.objectAdjacency.get(x + 1, y) & 0x72) === 0 && (this.objectAdjacency.get(x + 1, y + 1) & 0x73) === 0 && this.routeVia.get(x + 1, y + 1) === 0) {
+                 routeX[writePtr] = x + 1;
+                 routeY[writePtr] = y + 1;
+                 writePtr = (writePtr + 1) % size;
+@@ -845,7 +843,7 @@ class World {
+         }
+ 
+         if (GameData.wallObjectAdjacent[id] === 1) {
+-            const adjacency  = this.objectAdjacency.get(x, y);
++            const adjacency = this.objectAdjacency.get(x, y);
+ 
+             if (dir === 0) {
+                 this.objectAdjacency.set(x, y, adjacency | 1);
+@@ -993,7 +991,7 @@ class World {
+                                 l14 = 1;
+                             }
+                         }
+-                        
++
+                         if (GameData.tileAdjacent[decorationType - 1] !== 0) {
+                             const adjacency = this.objectAdjacency.get(lx, ly);
+                             this.objectAdjacency.set(lx, ly, adjacency | 0x40);
+@@ -1205,7 +1203,7 @@ class World {
+                         this.objectAdjacency.set(adjacency | 2);
+ 
+                         if (i2 > 0) {
+-                            this._setObjectAdjacency_from3(i2 - 1, k2, 8); 
++                            this._setObjectAdjacency_from3(i2 - 1, k2, 8);
+                         }
+                     }
+ 
+@@ -1219,7 +1217,7 @@ class World {
+                 if (k3 > 0 && k3 < 12000 && (GameData.wallObjectInvisible[k3 - 1] === 0 || this.aBoolean592)) {
+                     this.method422(this.parentModel, k3 - 1, i2, k2, i2 + 1, k2 + 1);
+ 
+-                    if (flag && GameData.wallObjectAdjacent[k3 - 1] !== 0) { 
++                    if (flag && GameData.wallObjectAdjacent[k3 - 1] !== 0) {
+                         const adjacency = this.objectAdjacency.get(i2, k2);
+                         this.objectAdjacency.set(adjacency | 0x20);
+                     }
+@@ -1345,7 +1343,7 @@ class World {
+                         this.terrainHeightLocal.set(l11, i14, l23);
+                     } else {
+                         const height = this.terrainHeightLocal.get(l11, i14);
+-                        this.terrainHeightLoca.set(l11, i14, height - 0x13880);
++                        this.terrainHeightLocal.set(l11, i14, height - 0x13880);
+                     }
+ 
+                     if (l24 < 0x13880) {
+@@ -1356,7 +1354,7 @@ class World {
+                     }
+ 
+                     if (j25 < 0x13880) {
+-                        this.terrainHeightLoca.set(j19, j21, l23);
++                        this.terrainHeightLocal.set(j19, j21, l23);
+                     } else {
+                         const height = this.terrainHeightLocal.get(j19, j21);
+                         this.terrainHeightLocal.set(j19, j21, height - 0x13880);
+@@ -1366,7 +1364,7 @@ class World {
+                         this.terrainHeightLocal.set(l22, j23, l23);
+                     } else {
+                         const height = this.terrainHeightLocal.get(l22, j23);
+-                        this.terrainHeightLoca.set(l22, j23, height - 0x13880);
++                        this.terrainHeightLocal.set(l22, j23, height - 0x13880);
+                     }
+                 }
+             }
+@@ -1658,8 +1656,8 @@ class World {
+                     let gameModel = models[GameData.objectModelIndex[k]].copy(false, true, false, false);
+                     let k1 = (((i + i + i1) * this.anInt585) / 2) | 0;
+                     let i2 = (((j + j + j1) * this.anInt585) / 2) | 0;
+-                    gameModel.translate(k1, -getElevation(k1, i2), i2);
+-                    gameModel.orient(0, getTileDirection(i, j) * 32, 0);
++                    gameModel.translate(k1, -this.getElevation(k1, i2), i2);
++                    gameModel.orient(0, this.getTileDirection(i, j) * 32, 0);
+                     this.scene.addModel(gameModel);
+                     gameModel.setLight(48, 48, -50, -10, -50);
+ 
+@@ -1683,7 +1681,7 @@ class World {
+                                         j2 -= 48;
+                                     }
+ 
+-                                    this.wallsDiagonal.set(byte0, l1 * 48 + j2,  0);
++                                    this.wallsDiagonal.set(byte0, l1 * 48 + j2, 0);
+                                 }
+                             }
+                         }
